@@ -59,7 +59,8 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
           <title>Print Label</title>
           <style>
             @page {
-              size: 50.8mm 25.4mm;
+              /* Printer feeds label in portrait (short side first: 25.4mm wide, 50.8mm tall) */
+              size: 25.4mm 50.8mm;
               margin: 0;
             }
             * {
@@ -68,13 +69,15 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
               padding: 0;
             }
             html, body {
-              width: 50.8mm;
-              height: 25.4mm;
+              width: 25.4mm;
+              height: 50.8mm;
               overflow: hidden;
+              background: #fff;
             }
+            /* Each page is a portrait container */
             .page {
-              width: 50.8mm;
-              height: 25.4mm;
+              width: 25.4mm;
+              height: 50.8mm;
               display: flex;
               align-items: center;
               justify-content: center;
@@ -84,19 +87,22 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
             .page:last-child {
               page-break-after: avoid;
             }
+            /* Sticker is landscape but rotated -90deg to print correctly on portrait feed */
             .sticker {
               width: 50.8mm;
               height: 25.4mm;
+              transform: rotate(-90deg);
+              transform-origin: center center;
               display: flex;
               flex-direction: column;
               align-items: center;
               justify-content: space-between;
               font-family: Arial, Helvetica, sans-serif;
-              box-sizing: border-box;
               padding: 1mm 1.5mm;
               color: #000;
               background: #fff;
               overflow: hidden;
+              flex-shrink: 0;
             }
           </style>
         </head>
