@@ -5,9 +5,10 @@ import { barcodeService } from '../services/barcodeService';
 interface StickerPreviewProps {
   product: Product;
   quantity?: number;
+  shopName?: string;
 }
 
-export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantity = 1 }) => {
+export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantity = 1, shopName = 'Shop Name' }) => {
   const [barcodeImage, setBarcodeImage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -15,8 +16,7 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
     const generateBarcode = async () => {
       try {
         setIsLoading(true);
-        // For OS-210 (50.8mm width) leave small side margins; generate barcode at 46mm
-        const barcode = await barcodeService.generateBarcode(product.barcode, 46);
+        const barcode = await barcodeService.generateBarcode(product.barcode, 49.8);
         setBarcodeImage(barcode);
       } catch (error) {
         console.error('Failed to generate barcode:', error);
@@ -29,20 +29,26 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
   }, [product.barcode]);
 
   const handlePrint = () => {
-    // Open a dedicated print window with only the sticker(s) content sized to TE-210
     const printWindow = window.open('', '_blank', 'width=400,height=300');
     if (!printWindow) {
       alert('Unable to open print window. Please allow popups and try again.');
       return;
     }
 
+    // Generate full quantity of stickers for printing
     const stickerHtml = Array(quantity).fill(null).map(() => (`
-      <div class="sticker" style="width:50.8mm;height:25.4mm;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui, -apple-system, sans-serif;box-sizing:border-box;padding:2mm;">
-        ${barcodeImage ? `<img src="${barcodeImage}" style="max-width:46mm;height:auto;display:block;margin-bottom:2px;"/>` : ''}
-        <div style="font-family:monospace;font-size:9px;margin-bottom:1px;">${product.code}</div>
-        <div style="font-weight:600;font-size:10px;margin-bottom:1px;">${product.name}</div>
-        <div style="font-size:9px;color:#444;">MRP</div>
-        <div style="font-weight:700;font-size:10px;">${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(product.mrp)}</div>
+      <div class="sticker" style="width:50.8mm;height:25.4mm;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-family:system-ui, -apple-system, sans-serif;box-sizing:border-box;padding:1mm 1.5mm;color:#000;background:#fff;overflow:hidden;">
+        <div style="width:100%;text-align:center;font-size:2.5mm;font-weight:900;letter-spacing:1px;margin-bottom:0.5mm;text-transform:uppercase;">${shopName}</div>
+        <div style="width:100%;flex:1;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;">
+          ${barcodeImage ? `<img src="${barcodeImage}" style="width:100%;height:100%;display:block;"/>` : ''}
+        </div>
+        <div style="width:100%;text-align:center;line-height:1.2;margin-top:1mm;margin-bottom:0.5mm;display:flex;flex-direction:column;">
+          <div style="font-weight:900;font-size:2.5mm;margin-bottom:0.5mm;">MRP: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(product.mrp)}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+            <div style="font-weight:bold;font-size:2.2mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;">${product.name}</div>
+            <div style="font-family:monospace;font-size:2.2mm;font-weight:bold;text-align:right;">${product.code}</div>
+          </div>
+        </div>
       </div>
     `)).join('\n');
 
@@ -74,10 +80,10 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="glass-card flex items-center justify-center p-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Generating barcode...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-brand-200 border-t-brand-600 mx-auto mb-4"></div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Generating barcode...</p>
         </div>
       </div>
     );
@@ -85,66 +91,69 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
 
   const formatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
 
-  const stickers = Array(quantity).fill(null).map((_, idx) => (
+  // Only render 1 sticker for on-screen preview
+  const previewSticker = (
     <div
-      key={idx}
-      className="sticker-preview bg-white border-0 rounded-sm p-1 flex flex-col items-center justify-center text-center"
-      style={{ fontSize: '10px' }}
+      className="sticker-preview bg-white border border-black rounded-sm flex flex-col items-center justify-between text-black box-border overflow-hidden"
+      style={{ padding: '1mm 1.5mm' }}
     >
-      {/* Full-width barcode on top */}
-      <div className="w-full mb-1 flex items-center justify-center">
+      {/* Top Shop Name */}
+      <div className="w-full text-center font-black uppercase tracking-wider mb-[0.5mm]" style={{ fontSize: '2.5mm' }}>
+        {shopName}
+      </div>
+
+      {/* Barcode container taking available space */}
+      <div className="w-full flex-1 flex items-center justify-center min-h-0 overflow-hidden">
         {barcodeImage && (
-          <img src={barcodeImage} alt="barcode" className="max-w-full" style={{ height: 'auto' }} />
+          <img src={barcodeImage} alt="barcode" className="w-full h-full block" />
         )}
       </div>
 
-      {/* Product code centered under barcode */}
-      <div className="mt-0.5 mb-0.5">
-        <p className="text-xs font-mono tracking-wider">{product.code}</p>
-      </div>
-
-      {/* Product name */}
-      <div className="mb-1">
-        <p className="text-sm font-semibold">{product.name}</p>
-      </div>
-
-      {/* MRP large */}
-      <div className="mt-1">
-        <p className="text-xs text-gray-600">MRP</p>
-        <p className="text-sm font-bold">{formatter.format(product.mrp)}</p>
+      {/* Text group below barcode */}
+      <div className="w-full text-center mt-[1mm] mb-[0.5mm] leading-tight flex flex-col">
+        <div className="font-black mb-[0.5mm]" style={{ fontSize: '2.5mm' }}>
+          MRP: {formatter.format(product.mrp)}
+        </div>
+        <div className="w-full flex justify-between items-center">
+          <div className="font-bold whitespace-nowrap overflow-hidden text-ellipsis text-left" style={{ fontSize: '2.2mm' }}>
+            {product.name}
+          </div>
+          <div className="font-mono font-bold shrink-0 text-right" style={{ fontSize: '2.2mm' }}>
+            {product.code}
+          </div>
+        </div>
       </div>
     </div>
-  ));
+  );
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="glass-card p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Sticker Preview</h2>
+        <div>
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Sticker Preview</h2>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+            {product.name} — {product.code} • Will print <strong className="text-slate-650 dark:text-slate-350">{quantity}</strong> sticker{quantity > 1 ? 's' : ''}
+          </p>
+        </div>
         <button
           onClick={handlePrint}
-          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-200 print-hidden"
+          className="btn-success print-hidden flex items-center gap-2"
         >
-          🖨️ Print Sticker
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Print {quantity > 1 ? `${quantity} Stickers` : 'Sticker'}
         </button>
       </div>
 
-      {/* On-screen scaled preview (hidden during print) */}
+      {/* On-screen preview — always show just 1 sticker */}
       <div className="screen-preview">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {stickers}
-        </div>
+        {previewSticker}
       </div>
 
-      {/* Print-only layout (hidden on screen scaling) */}
-      <div className="print-only">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {stickers}
-        </div>
-      </div>
-
-      <div className="mt-6 p-4 bg-blue-50 rounded-md print-hidden">
-        <p className="text-sm text-gray-700">
-          <strong>Print Tips:</strong> This app prints TE‑210 labels (50.8×25.4mm). Use your TE‑210
+      <div className="mt-6 p-4 rounded-xl bg-brand-50/60 dark:bg-brand-950/20 border border-brand-100/50 dark:border-brand-900/30 print-hidden">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          <strong className="text-slate-700 dark:text-slate-300">Print Tips:</strong> This app prints TE‑210 labels (50.8×25.4mm). Use your TE‑210
           printer at its native DPI (commonly 203 DPI), set margins to 0, scaling 100%, and
           choose the printer's label or roll paper size for best results.
         </p>
