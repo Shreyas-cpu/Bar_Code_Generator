@@ -59,71 +59,30 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
           <title>Print Label</title>
           <style>
             @page {
-              /* Printer feeds label in portrait (short side first: 25.4mm wide, 50.8mm tall) */
-              size: 25.4mm 50.8mm;
+              size: 50.8mm 25.4mm;
               margin: 0;
-            }
-            * {
-              box-sizing: border-box;
-              margin: 0;
-              padding: 0;
             }
             html, body {
-              width: 25.4mm;
-              height: 50.8mm;
-              overflow: hidden;
-              background: #fff;
-            }
-            /* Each page is a portrait container */
-            .page {
-              width: 25.4mm;
-              height: 50.8mm;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              page-break-after: always;
-              page-break-inside: avoid;
-            }
-            .page:last-child {
-              page-break-after: avoid;
-            }
-            /* Sticker is landscape but rotated -90deg to print correctly on portrait feed */
-            .sticker {
+              margin: 0;
+              padding: 0;
               width: 50.8mm;
               height: 25.4mm;
-              transform: rotate(-90deg);
-              transform-origin: center center;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: space-between;
-              font-family: Arial, Helvetica, sans-serif;
-              padding: 1mm 1.5mm;
-              color: #000;
-              background: #fff;
+            }
+            .sticker {
+              page-break-after: always;
+              page-break-inside: avoid;
+              width: 50.8mm;
+              height: 25.4mm;
               overflow: hidden;
-              flex-shrink: 0;
+              box-sizing: border-box;
+            }
+            .sticker:last-child {
+              page-break-after: avoid;
             }
           </style>
         </head>
         <body>
-          ${Array(quantity).fill(null).map(() => `
-            <div class="page">
-              <div class="sticker">
-                <div style="width:100%;text-align:center;font-size:2.5mm;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;">${shopName}</div>
-                <div style="width:100%;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0.5mm 0;">
-                  ${barcodeImage ? `<img src="${barcodeImage}" style="max-width:100%;max-height:100%;object-fit:contain;display:block;"/>` : ''}
-                </div>
-                <div style="width:100%;line-height:1.2;display:flex;flex-direction:column;">
-                  <div style="font-weight:900;font-size:2.5mm;text-align:center;">MRP: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(product.mrp)}</div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
-                    <div style="font-weight:bold;font-size:2mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;">${product.name}</div>
-                    <div style="font-family:monospace;font-size:2mm;font-weight:bold;text-align:right;">${product.code}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `).join('')}
+          ${stickerHtml}
           <script>
             window.onload = function() {
               setTimeout(function() { window.print(); }, 250);
