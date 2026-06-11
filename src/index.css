@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  @apply bg-gray-50;
+}
+
+.sticker-preview {
+  /* TE‑210 label size: 50.8mm x 25.4mm */
+  width: 50.8mm;
+  height: 25.4mm;
+  page-break-after: always;  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;}
+
+/* Screen preview helpers */
+.screen-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.screen-preview .sticker-preview {
+  /* scale up visually for on-screen preview without affecting print */
+  transform: scale(1.6);
+  transform-origin: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* constrain barcode image inside sticker */
+.sticker-preview img {
+  width: 90%;
+  max-height: 55%;
+  object-fit: contain;
+  display: block;
+}
+
+/* hide print-only wrapper on screen by default */
+.print-only {
+  display: none;
+}
+
+@media print { 
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: white !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .print-only,
+  .print-only * {
+    visibility: visible !important;
+  }
+
+  .print-only {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    display: block !important;
+  }
+
+  /* hide screen preview when printing */
+  .screen-preview {
+    display: none !important;
+  }
+
+  .sticker-preview {
+    @apply shadow-none border-none;
+    page-break-after: always;
+  }
+
+  @page {
+    /* Set explicit page size matching OS-210 sticker (width x height) */
+    size: 50.8mm 25.4mm;
+    margin: 0;
+  }
+}
