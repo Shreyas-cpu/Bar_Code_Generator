@@ -37,16 +37,16 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
 
     // Generate full quantity of stickers for printing
     const stickerHtml = Array(quantity).fill(null).map(() => (`
-      <div class="sticker" style="width:50.8mm;height:25.4mm;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-family:system-ui, -apple-system, sans-serif;box-sizing:border-box;padding:1mm 1.5mm;color:#000;background:#fff;overflow:hidden;">
-        <div style="width:100%;text-align:center;font-size:2.5mm;font-weight:900;letter-spacing:1px;margin-bottom:0.5mm;text-transform:uppercase;">${shopName}</div>
-        <div style="width:100%;flex:1;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;">
-          ${barcodeImage ? `<img src="${barcodeImage}" style="width:100%;height:100%;display:block;"/>` : ''}
+      <div class="sticker" style="width:50.8mm;height:25.4mm;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-family:Arial,Helvetica,sans-serif;box-sizing:border-box;padding:1mm 1.5mm;color:#000;background:#fff;overflow:hidden;">
+        <div style="width:100%;text-align:center;font-size:2.5mm;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;">${shopName}</div>
+        <div style="width:100%;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0.5mm 0;">
+          ${barcodeImage ? `<img src="${barcodeImage}" style="max-width:100%;max-height:100%;object-fit:contain;display:block;"/>` : ''}
         </div>
-        <div style="width:100%;text-align:center;line-height:1.2;margin-top:1mm;margin-bottom:0.5mm;display:flex;flex-direction:column;">
-          <div style="font-weight:900;font-size:2.5mm;margin-bottom:0.5mm;">MRP: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(product.mrp)}</div>
+        <div style="width:100%;line-height:1.2;display:flex;flex-direction:column;">
+          <div style="font-weight:900;font-size:2.5mm;text-align:center;">MRP: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(product.mrp)}</div>
           <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
-            <div style="font-weight:bold;font-size:2.2mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;">${product.name}</div>
-            <div style="font-family:monospace;font-size:2.2mm;font-weight:bold;text-align:right;">${product.code}</div>
+            <div style="font-weight:bold;font-size:2mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;">${product.name}</div>
+            <div style="font-family:monospace;font-size:2mm;font-weight:bold;text-align:right;">${product.code}</div>
           </div>
         </div>
       </div>
@@ -58,9 +58,22 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
           <meta charset="utf-8">
           <title>Print Label</title>
           <style>
-            @page { size: 50.8mm 25.4mm; margin: 0; }
-            body { margin: 0; padding: 0; }
-            .sticker { page-break-after: always; }
+            @page {
+              size: 50.8mm 25.4mm landscape;
+              margin: 0;
+            }
+            html, body {
+              margin: 0;
+              padding: 0;
+              width: 50.8mm;
+            }
+            .sticker {
+              page-break-after: always;
+              page-break-inside: avoid;
+            }
+            .sticker:last-child {
+              page-break-after: avoid;
+            }
           </style>
         </head>
         <body>
