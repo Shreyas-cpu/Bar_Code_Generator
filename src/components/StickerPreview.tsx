@@ -59,7 +59,7 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
           <title>Print Label</title>
           <style>
             @page {
-              size: 50.8mm 25.4mm landscape;
+              size: 50.8mm 25.4mm;
               margin: 0;
             }
             html, body {
