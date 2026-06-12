@@ -34,6 +34,33 @@ const defaultPrinterSettings: PrinterSettings = {
   isConnected: false
 };
 
+// ── localStorage helpers (used as fallback when backend is unavailable) ──────
+const LS = {
+  getProducts: (): Product[] => {
+    try { return JSON.parse(localStorage.getItem('products') || '[]'); } catch { return []; }
+  },
+  saveProducts: (p: Product[]) => localStorage.setItem('products', JSON.stringify(p)),
+  getPrinterSettings: (): PrinterSettings => {
+    try { return JSON.parse(localStorage.getItem('printerSettings') || 'null') || defaultPrinterSettings; } catch { return defaultPrinterSettings; }
+  },
+  savePrinterSettings: (s: PrinterSettings) => localStorage.setItem('printerSettings', JSON.stringify(s)),
+  getShopName: (): string => localStorage.getItem('shopName') || '',
+  saveShopName: (n: string) => localStorage.setItem('shopName', n),
+};
+
+let useBackend = true; // Will be set to false if first request fails
+
+async function tryFetch(input: RequestInfo, init?: RequestInit): Promise<Response | null> {
+  if (!useBackend) return null;
+  try {
+    const res = await fetch(input as any, init);
+    return res;
+  } catch {
+    useBackend = false;
+    return null;
+  }
+}
+
 export const useStore = create<AppStore>((set, get) => ({
   products: [],
   selectedProduct: null,
@@ -42,26 +69,30 @@ export const useStore = create<AppStore>((set, get) => ({
   isLoaded: false,
   
   init: async () => {
-    try {
-      const [productsRes, settingsRes] = await Promise.all([
-        fetch(`${API_URL}/products`),
-        fetch(`${API_URL}/settings`)
+    // Try backend first; fall back to localStorage silently
+    const res = await tryFetch(`${API_URL}/products`);
+    if (res && res.ok) {
+      const [products, settingsRes] = await Promise.all([
+        res.json(),
+        tryFetch(`${API_URL}/settings`).then(r => r?.json().catch(() => ({})) ?? {})
       ]);
-      const products = await productsRes.json();
-      const settings = await settingsRes.json();
-      
       set({
         products,
-        printerSettings: settings.printerSettings || defaultPrinterSettings,
-        shopName: settings.shopName || '',
+        printerSettings: (settingsRes as any).printerSettings || defaultPrinterSettings,
+        shopName: (settingsRes as any).shopName || '',
         isLoaded: true
       });
-    } catch (error) {
-      console.error('Failed to load data from backend:', error);
-      // Fallback to defaults if backend fails
-      set({ isLoaded: true });
+    } else {
+      // Backend unavailable — use localStorage
+      set({
+        products: LS.getProducts(),
+        printerSettings: LS.getPrinterSettings(),
+        shopName: LS.getShopName(),
+        isLoaded: true
+      });
     }
   },
+
 
   addProduct: async (product) => {
     const id = Date.now().toString();
@@ -69,91 +100,63 @@ export const useStore = create<AppStore>((set, get) => ({
       ...product,
       id,
       barcode: id,
-      createdAt: new Date().toISOString() as any, // backend expects string
+      createdAt: new Date().toISOString() as any,
     };
-    
-    // Optimistic UI update
     const products = [...get().products, newProduct];
     set({ products });
-    
-    try {
-      await fetch(`${API_URL}/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProduct)
-      });
-    } catch (error) {
-      console.error('Failed to save product:', error);
-      // Rollback would go here in a real app
-    }
+    LS.saveProducts(products); // always mirror to localStorage
+    await tryFetch(`${API_URL}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newProduct)
+    });
   },
-  
+
   updateProduct: async (id, updates) => {
-    // Optimistic UI update
-    const products = get().products.map(p =>
-      p.id === id ? { ...p, ...updates } : p
-    );
+    const products = get().products.map(p => p.id === id ? { ...p, ...updates } : p);
     set({ products });
-    
-    try {
-      await fetch(`${API_URL}/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-    } catch (error) {
-      console.error('Failed to update product:', error);
-    }
+    LS.saveProducts(products);
+    await tryFetch(`${API_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
   },
-  
+
   deleteProduct: async (id) => {
-    // Optimistic UI update
     const products = get().products.filter(p => p.id !== id);
     set({ products });
-    
-    try {
-      await fetch(`${API_URL}/products/${id}`, {
-        method: 'DELETE'
-      });
-    } catch (error) {
-      console.error('Failed to delete product:', error);
-    }
+    LS.saveProducts(products);
+    await tryFetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
   },
-  
+
   selectProduct: (product) => {
     set({ selectedProduct: product });
   },
-  
+
   getProducts: () => get().products,
-  
+
   setPrinterSettings: async (settings) => {
     const printerSettings = { ...get().printerSettings, ...settings };
     set({ printerSettings });
-    
-    try {
-      await fetch(`${API_URL}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'printerSettings', value: printerSettings })
-      });
-    } catch (error) {
-      console.error('Failed to save printer settings:', error);
-    }
+    LS.savePrinterSettings(printerSettings);
+    await tryFetch(`${API_URL}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'printerSettings', value: printerSettings })
+    });
   },
-  
+
   getPrinterSettings: () => get().printerSettings,
 
   setShopName: async (name: string) => {
     set({ shopName: name });
-    
-    try {
-      await fetch(`${API_URL}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'shopName', value: name })
-      });
-    } catch (error) {
-      console.error('Failed to save shop name:', error);
-    }
+    LS.saveShopName(name);
+    await tryFetch(`${API_URL}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'shopName', value: name })
+    });
   },
 }));
+

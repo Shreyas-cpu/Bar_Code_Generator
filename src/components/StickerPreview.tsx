@@ -82,7 +82,6 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
     );
   }
 
-  const formatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
 
   return (
     <div className="glass-card p-6">

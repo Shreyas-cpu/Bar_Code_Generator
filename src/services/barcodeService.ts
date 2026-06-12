@@ -3,7 +3,7 @@ import JsBarcode from 'jsbarcode';
 export const barcodeService = {
   // Generate a PNG barcode sized to a target physical width (mm) for better print fidelity.
   // Defaults assume 203 DPI (approx 8 dots/mm). For higher quality, devicePixelRatio is applied.
-  generateBarcode: async (value: string, widthMm: number = 49.8, format: string = 'CODE128'): Promise<string> => {
+  generateBarcode: async (value: string, _widthMm: number = 49.8, format: string = 'CODE128'): Promise<string> => {
     try {
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       JsBarcode(svg, value, {

@@ -1,7 +1,8 @@
 import { Product } from '../types';
 
 // Store the claimed USB device globally so it persists across prints
-let connectedDevice: USBDevice | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let connectedDevice: any = null;
 
 export const printerService = {
 
@@ -35,7 +36,7 @@ export const printerService = {
       await device.claimInterface(0);
 
       connectedDevice = device;
-      return { success: true, deviceName: device.productName || 'TSC TE-210' };
+      return { success: true, deviceName: (device as any).productName || 'TSC TE-210' };
     } catch (err: any) {
       connectedDevice = null;
       if (err?.name === 'NotFoundError') {
@@ -51,8 +52,8 @@ export const printerService = {
   disconnect: async (): Promise<void> => {
     if (connectedDevice && connectedDevice.opened) {
       try {
-        await connectedDevice.releaseInterface(0);
-        await connectedDevice.close();
+        await (connectedDevice as any).releaseInterface(0);
+        await (connectedDevice as any).close();
       } catch (_) {
         // Ignore errors on disconnect
       }
