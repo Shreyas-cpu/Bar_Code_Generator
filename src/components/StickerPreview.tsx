@@ -16,11 +16,19 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
   const [printMsg, setPrintMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  // ── Global label variables (mirrors printerService.buildTSPLCommand) ───────
+  const SHOP_NAME    = shopName.toUpperCase();
+  const PRODUCT_NAME = product.name.length > 20 ? product.name.substring(0, 20) : product.name;
+  const BARCODE_DATA = `${product.name}*${product.mrp}`;  // e.g. "T-SHIRT*199"
+  const PRICE        = `Rs. ${product.mrp.toFixed(2)}`;
+  // ────────────────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     const generateBarcode = async () => {
       try {
         setIsLoading(true);
-        const barcode = await barcodeService.generateBarcode(product.barcode, 49.8);
+        // Use the same BARCODE_DATA string that the printer will encode
+        const barcode = await barcodeService.generateBarcode(BARCODE_DATA, 49.8);
         setBarcodeImage(barcode);
       } catch (error) {
         console.error('Failed to generate barcode:', error);
@@ -29,7 +37,8 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
       }
     };
     generateBarcode();
-  }, [product.barcode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [BARCODE_DATA]);
 
   // Poll connection status every second so the button stays in sync
   useEffect(() => {
@@ -137,31 +146,26 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
           className="sticker-preview bg-white border border-black rounded-sm flex flex-col items-center justify-between text-black box-border overflow-hidden"
           style={{ padding: '1mm 1.5mm' }}
         >
-          {/* Shop name */}
+          {/* 1. SHOP NAME */}
           <div className="w-full text-center font-black uppercase tracking-wider mb-[0.5mm]" style={{ fontSize: '2.5mm' }}>
-            {shopName}
+            {SHOP_NAME}
           </div>
 
-          {/* Barcode */}
+          {/* 2. PRODUCT NAME */}
+          <div className="w-full text-center font-bold" style={{ fontSize: '2mm' }}>
+            {PRODUCT_NAME}
+          </div>
+
+          {/* 3. BARCODE — encodes BARCODE_DATA = "name*mrp" */}
           <div className="w-full flex-1 flex items-center justify-center min-h-0 overflow-hidden">
             {barcodeImage && (
-              <img src={barcodeImage} alt="barcode" className="w-full h-full block" />
+              <img src={barcodeImage} alt={BARCODE_DATA} className="w-full h-full block" />
             )}
           </div>
 
-          {/* MRP + name/code row */}
-          <div className="w-full text-center mt-[1mm] mb-[0.5mm] leading-tight flex flex-col">
-            <div className="font-black mb-[0.5mm]" style={{ fontSize: '2.5mm' }}>
-              MRP: {formatter.format(product.mrp)}
-            </div>
-            <div className="w-full flex justify-between items-center">
-              <div className="font-bold whitespace-nowrap overflow-hidden text-ellipsis text-left" style={{ fontSize: '2.2mm' }}>
-                {product.name}
-              </div>
-              <div className="font-mono font-bold shrink-0 text-right" style={{ fontSize: '2.2mm' }}>
-                {product.code}
-              </div>
-            </div>
+          {/* 4. PRICE */}
+          <div className="w-full text-right font-black" style={{ fontSize: '2.5mm' }}>
+            {PRICE}
           </div>
         </div>
       </div>

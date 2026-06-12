@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TSC Print Test</title>
+</head>
+<body>
+    <h1>TSC TE 210 Web Printing</h1>
+    <button onclick="printLabel()">Print Test Label</button>
+
+    <script>
+        // Paste the JavaScript code from Step 2 here
+    </script>
+</body>
+</html>
+<script>
+
+async function printLabel() {
+    let device;
+
+    try {
+        // 1. Request the printer
+        device = await navigator.usb.requestDevice({
+            filters: [{ vendorId: 0x1203 }] // Double check if your Vendor ID matches Zadig
+        });
+
+        // 2. Open the physical connection
+        await device.open();
+        
+        // 3. Reset or select configuration safely
+        if (device.configuration === null) {
+            await device.selectConfiguration(1);
+        }
+
+        // 4. Claim the interface (usually 0 for TSC printers)
+        await device.claimInterface(0); 
+
+        // 5. Your TSPL Command
+const tsplCommand = 
+    "SIZE 2, 1\n" +                           // 2 inches wide, 1 inch high
+    "GAP 0.12, 0\n" +                         // Standard gap
+    "DIRECTION 1\n" +                         // Ensures text prints top-to-bottom
+    "CODEPAGE 1252\n"+
+    "CLS\n" +                                 // Clear image buffer
+
+    // 1. SHOP NAME (Top Center-ish)
+    // X=15 (left margin), Y=15 (near top), Font "3" (standard readable font)
+    "TEXT 55, 15, \"3\", 0, 1, 1, \"Ladli Collections\"\n" +
+    "TEXT 55, 45, \"1\", 0, 1, 1, \"T-SHIRT\"\n" +
+
+    // 2. BARCODE (Middle)
+    // Y=50 moves it below the shop name. 
+    // Height changed from 1 to 50 dots so it is easily scannable.
+    // Human-readable set to 1 so the number "12345678" prints right under the bars.
+    "BARCODE 55, 70, \"128\", 50, 1, 0, 2, 4, \"T-SHIRT*199\"\n" +
+
+    // 3. PRICE (Bottom Right)
+    // Y=140 puts it near the bottom. 
+    // Font "3" is bolded slightly by using 1, 1 multiplier, or you can use "4" for larger size.
+    //"TEXT 240, 140, \"3\", 0, 1, 1, \"₹. 450.00\"\n" +
+    "TEXT 260, 140, \"ROMAN.TTF\", 0, 10, 10, \"Rs. 199.00\"\n" +
+
+    "PRINT 1, 1\n";
+    
+
+    const encoder = new TextEncoder();
+    const data = encoder.encode(tsplCommand);
+
+        // 6. Find the output endpoint dynamically
+    const endpoint = device.configuration.interfaces[0].alternate.endpoints
+            .find(e => e.direction === 'out');
+
+        if (!endpoint) {
+            throw new Error("No output endpoint found.");
+        }
+
+        // 7. Send data
+        await device.transferOut(endpoint.endpointNumber, data);
+        console.log("Printed successfully via WinUSB!");
+
+        } catch (error) {
+            console.error("Printing failed:", error);
+        } finally {
+            if (device && device.opened) {
+                await device.close();
+            }
+        }
+}
+</script>

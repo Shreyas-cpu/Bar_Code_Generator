@@ -63,39 +63,49 @@ export const printerService = {
   /**
    * Builds the TSPL command string dynamically from product data.
    * Label size: 2" x 1" (50.8mm x 25.4mm) — matches TSC TE-210 sticker roll.
+   *
+   * All label fields are global variables driven from the UI/product store:
+   *   SHOP_NAME    → shopName (from store)
+   *   PRODUCT_NAME → product.name
+   *   BARCODE_DATA → "{product.name}*{product.mrp}"  e.g. "T-SHIRT*199"
+   *   PRICE        → "Rs. {product.mrp}"
+   *   QUANTITY     → quantity (from UI)
    */
   buildTSPLCommand: (
     product: Product,
     shopName: string,
     quantity: number
   ): string => {
-    const mrpFormatted = `Rs. ${product.mrp.toFixed(2)}`;
-
-    // Truncate product name if too long to fit on the label
-    const productName = product.name.length > 20 ? product.name.substring(0, 20) : product.name;
+    // ── Global label variables (all driven from UI) ──────────────────────────
+    const SHOP_NAME    = shopName.toUpperCase();
+    const PRODUCT_NAME = product.name.length > 20 ? product.name.substring(0, 20) : product.name;
+    const BARCODE_DATA = `${product.name}*${product.mrp}`;   // e.g. "T-SHIRT*199"
+    const PRICE        = `Rs. ${product.mrp.toFixed(2)}`;    // e.g. "Rs. 199.00"
+    const QUANTITY     = quantity;
+    // ─────────────────────────────────────────────────────────────────────────
 
     const cmd =
-      'SIZE 2, 1\n' +                              // 2" wide x 1" high
-      'GAP 0.12, 0\n' +                            // Gap between labels
-      'DIRECTION 1\n' +                            // Top-to-bottom print direction
-      'CODEPAGE 1252\n' +                          // Windows Latin-1 encoding
-      'CLS\n' +                                    // Clear image buffer
+      'SIZE 2, 1\n' +           // Label: 2" wide × 1" high (50.8mm × 25.4mm)
+      'GAP 0.12, 0\n' +         // Gap between labels
+      'DIRECTION 1\n' +         // Print direction: top-to-bottom
+      'CODEPAGE 1252\n' +       // Windows Latin-1 character encoding
+      'CLS\n' +                 // Clear image buffer
 
-      // Shop name - top center
-      `TEXT 55, 15, "3", 0, 1, 1, "${shopName}"\n` +
+      // 1. SHOP NAME — top of label
+      `TEXT 55, 15, "3", 0, 1, 1, "${SHOP_NAME}"\n` +
 
-      // Product name - below shop name
-      `TEXT 55, 45, "1", 0, 1, 1, "${productName}"\n` +
+      // 2. PRODUCT NAME — below shop name
+      `TEXT 55, 45, "1", 0, 1, 1, "${PRODUCT_NAME}"\n` +
 
-      // Barcode (CODE128) - middle of label
-      // Format: BARCODE x, y, type, height, human_readable, rotation, narrow, wide, data
-      `BARCODE 55, 70, "128", 50, 1, 0, 2, 4, "${product.barcode}"\n` +
+      // 3. BARCODE — CODE128, 50 dots tall, human-readable underneath
+      //    Data format: "PRODUCTNAME*PRICE"  (e.g. "T-SHIRT*199")
+      `BARCODE 55, 70, "128", 50, 1, 0, 2, 4, "${BARCODE_DATA}"\n` +
 
-      // Price - bottom right, large ROMAN font
-      `TEXT 260, 140, "ROMAN.TTF", 0, 10, 10, "${mrpFormatted}"\n` +
+      // 4. PRICE — bottom right in large ROMAN font
+      `TEXT 260, 140, "ROMAN.TTF", 0, 10, 10, "${PRICE}"\n` +
 
-      // Print: 1 label layout, N copies
-      `PRINT 1, ${quantity}\n`;
+      // 5. PRINT — 1 label layout, QUANTITY copies
+      `PRINT 1, ${QUANTITY}\n`;
 
     return cmd;
   },
