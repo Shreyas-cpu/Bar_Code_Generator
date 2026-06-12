@@ -4,6 +4,8 @@ import { ProductForm } from './components/ProductForm';
 import { ProductList } from './components/ProductList';
 import { StickerPreview } from './components/StickerPreview';
 import { PrinterSettings } from './components/PrinterSettings';
+import { LoginPage } from './components/LoginPage';
+import { useAuth } from './context/AuthContext';
 import './index.css';
 
 type Tab = 'products' | 'preview' | 'settings';
@@ -15,6 +17,7 @@ function App() {
   const setShopName = useStore((state) => state.setShopName);
   const init = useStore((state) => state.init);
   const isLoaded = useStore((state) => state.isLoaded);
+  const { user, isAllowed, isAuthLoading, logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState<Tab>('products');
   const [printQuantity, setPrintQuantity] = useState(1);
@@ -34,6 +37,34 @@ function App() {
     if (isDark) { root.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
     else { root.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
   }, [isDark]);
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 gap-4">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-brand-700 border-t-brand-400" />
+        <p className="text-slate-500 text-sm">Checking authentication...</p>
+      </div>
+    );
+  }
+
+  if (!user) return <LoginPage />;
+
+  if (!isAllowed) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+          </div>
+          <h2 className="text-white font-bold text-lg mb-2">Access Denied</h2>
+          <p className="text-slate-400 text-sm mb-6">The account <strong className="text-slate-300">{user.email}</strong> is not authorized to access this application.</p>
+          <button onClick={logout} className="btn-primary text-sm">Sign Out</button>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoaded) {
     return (
@@ -123,6 +154,17 @@ function App() {
 
             {/* Theme toggle */}
             <button onClick={() => setIsDark(!isDark)} className="theme-toggle" aria-label="Toggle dark mode" />
+
+            {/* Logout */}
+            <button
+              onClick={logout}
+              title={`Sign out (${user?.email})`}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
           </div>
         </div>
       </header>
