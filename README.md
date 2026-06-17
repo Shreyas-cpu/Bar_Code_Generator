@@ -17,6 +17,7 @@ A responsive web application for printing barcode stickers on thermal printers. 
 ## 📋 Sticker Content
 
 Each thermal sticker displays:
+
 - **Product Name** - Clear, large text
 - **Product Code** - Unique identifier
 - **MRP** - Maximum Retail Price in Indian Rupees
@@ -26,11 +27,13 @@ Each thermal sticker displays:
 ## 🛠️ System Requirements
 
 ### Desktop/Laptop
+
 - Modern web browser (Chrome, Edge, Firefox, Safari)
 - USB thermal printer (ESC/POS compatible)
 - USB port or Bluetooth adapter
 
 ### Mobile Device
+
 - Android phone/tablet with:
   - USB-OTG (On-The-Go) adapter
   - Thermal printer compatible with mobile
@@ -38,6 +41,7 @@ Each thermal sticker displays:
 - OR Bluetooth-enabled thermal printer
 
 ### Thermal Printer
+
 - 58mm or 80mm thermal paper width
 - ESC/POS command support
 - 200+ DPI resolution (recommended)
@@ -46,30 +50,37 @@ Each thermal sticker displays:
 ## 🚀 Installation & Setup
 
 ### 1. Prerequisites
+
 - Node.js (v16 or higher)
 - npm or yarn package manager
 
 ### 2. Clone/Download
+
 ```bash
 # Navigate to project directory
 cd thermal-barcode-printer
 ```
 
 ### 3. Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### 4. Start Development Server
+
 ```bash
 npm run dev
 ```
+
 The application will open at `http://localhost:5173`
 
 ### 5. Build for Production
+
 ```bash
 npm run build
 ```
+
 Optimized build will be created in the `dist` folder.
 
 ## 📖 Usage Guide
@@ -97,6 +108,7 @@ Optimized build will be created in the `dist` folder.
 ### Connecting Thermal Printer
 
 #### USB Printer
+
 1. Go to **Printer Settings** tab
 2. Select **USB** option
 3. Click **🔍 Search USB Printer**
@@ -104,6 +116,7 @@ Optimized build will be created in the `dist` folder.
 5. Choose paper width (58mm, 80mm, or 100mm)
 
 #### Bluetooth Printer
+
 1. Pair printer in device Bluetooth settings first
 2. Go to **Printer Settings** tab
 3. Select **Bluetooth** option
@@ -123,6 +136,7 @@ Optimized build will be created in the `dist` folder.
 ## 🔧 Technical Details
 
 ### Built With
+
 - **React 18** - UI framework
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Responsive styling
@@ -132,6 +146,7 @@ Optimized build will be created in the `dist` folder.
 - **ESC/POS** - Thermal printer protocol
 
 ### Browser Support
+
 - Chrome 90+
 - Edge 90+
 - Firefox 88+
@@ -139,6 +154,7 @@ Optimized build will be created in the `dist` folder.
 - Mobile browsers with USB/Bluetooth API support
 
 ### Data Storage
+
 - Products stored in browser's LocalStorage
 - Printer settings saved locally
 - No cloud synchronization (runs offline)
@@ -146,10 +162,12 @@ Optimized build will be created in the `dist` folder.
 ## 📱 Mobile Considerations
 
 ### iOS/iPadOS
+
 - Limited USB support; primarily works with Bluetooth printers
 - Bluetooth thermal printer recommended
 
 ### Android
+
 - Full USB support via USB-OTG
 - Both USB and Bluetooth printers work
 - Requires appropriate permissions
@@ -157,16 +175,19 @@ Optimized build will be created in the `dist` folder.
 ## 🎨 Customization
 
 ### Paper Width Settings
+
 - **58mm** - Smaller, compact labels
 - **80mm** - Standard thermal printer width
 - **100mm** - Larger labels with more space
 
 ### Barcode Format
+
 Default: CODE128 (works with most thermal printers)
 
 To change format, edit `src/services/barcodeService.ts`:
+
 ```typescript
-format: 'CODE128' // Change to CODE39, EAN-13, UPC-A, etc.
+format: "CODE128"; // Change to CODE39, EAN-13, UPC-A, etc.
 ```
 
 ## 🔒 Data Privacy
@@ -179,24 +200,28 @@ format: 'CODE128' // Change to CODE39, EAN-13, UPC-A, etc.
 ## 🐛 Troubleshooting
 
 ### Printer Not Detected
+
 - Ensure printer is powered on
 - Check USB connection or Bluetooth pairing
 - Try refreshing the browser
 - Check browser permissions for USB/Bluetooth access
 
 ### Barcode Not Printing
+
 - Verify barcode number format
 - Check printer paper is installed
 - Ensure sufficient printer memory
 - Test with a shorter barcode
 
 ### Poor Print Quality
+
 - Check print temperature settings on printer
 - Verify paper quality
 - Ensure 200+ DPI printer
 - Clean thermal head if available
 
 ### Mobile Connection Issues
+
 - Use a quality USB-OTG adapter
 - Try different USB port on printer
 - Restart both phone and printer
@@ -205,6 +230,7 @@ format: 'CODE128' // Change to CODE39, EAN-13, UPC-A, etc.
 ## 📝 Print Settings
 
 ### Recommended Print Settings
+
 - **Orientation**: Landscape
 - **Paper Size**: 80mm width
 - **DPI**: 203 (default for thermal)
@@ -224,6 +250,7 @@ format: 'CODE128' // Change to CODE39, EAN-13, UPC-A, etc.
 ## 📞 Support
 
 For issues or feature requests:
+
 1. Check troubleshooting section above
 2. Verify printer compatibility
 3. Test with different browser
@@ -246,3 +273,4 @@ Open source project for personal and commercial use.
 **Version**: 1.0.0  
 **Last Updated**: 2024  
 **Made for Ladies Cloth Shops** ✨
+Rx4nq7kY4+iS_Az

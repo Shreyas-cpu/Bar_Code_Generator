@@ -4,6 +4,16 @@ import { Product } from '../types';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let connectedDevice: any = null;
 
+export const generateDateCode = (dateInput: string | Date | undefined): string => {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const day = d.getDate().toString().padStart(2, '0');
+  const monthChar = String.fromCharCode(65 + d.getMonth()); // 0=A, 1=B, etc.
+  const year = d.getFullYear().toString().slice(-2);
+  return `${day}${monthChar}${year}`;
+};
+
 export const printerService = {
 
   /**
@@ -77,13 +87,17 @@ export const printerService = {
     shopName: string,
     quantity: number
   ): string => {
-    // ── Global label variables (all driven from UI) ──────────────────────────
+    // ── Global label variables (all driven from UI) ─────────────────────────────────────
     const SHOP_NAME    = shopName.toUpperCase();
     const PRODUCT_NAME = product.name.length > 20 ? product.name.substring(0, 20) : product.name;
     const BARCODE_DATA = `${product.name}*${product.mrp}`;   // e.g. "T-SHIRT*199"
-    const PRICE        = `Rs. ${product.mrp.toFixed(2)}`;    // e.g. "Rs. 199.00"
+    const SELL_PRICE   = product.sellingPrice ?? product.mrp;
+    const PRICE        = `Rs. ${SELL_PRICE.toFixed(2)}`;     // e.g. "Rs. 399.00"
+    const MRP_LABEL    = `MRP Rs.${product.mrp.toFixed(2)}`; // e.g. "MRP Rs.499.00"
+    const hasDiscount  = product.sellingPrice !== undefined && product.sellingPrice < product.mrp;
     const QUANTITY     = quantity;
-    // ─────────────────────────────────────────────────────────────────────────
+    const DATE_CODE    = generateDateCode(product.createdAt);
+    // ──────────────────────────────────────────────────────────────────────────────
 
     const cmd =
       'SIZE 2, 1\n' +           // Label: 2" wide × 1" high (50.8mm × 25.4mm)
@@ -97,13 +111,19 @@ export const printerService = {
 
       // 2. PRODUCT NAME — below shop name
       `TEXT 55, 45, "1", 0, 1, 1, "${PRODUCT_NAME}"\n` +
+      `TEXT 320, 45, "1", 0, 1, 1, "${DATE_CODE}"\n` +
 
       // 3. BARCODE — CODE128, 50 dots tall, human-readable underneath
       //    Data format: "PRODUCTNAME*PRICE"  (e.g. "T-SHIRT*199")
       `BARCODE 55, 70, "128", 50, 1, 0, 2, 4, "${BARCODE_DATA}"\n` +
 
-      // 4. PRICE — bottom right in large ROMAN font
-      `TEXT 260, 140, "ROMAN.TTF", 0, 10, 10, "${PRICE}"\n` +
+      // 4a. MRP (left) — only printed when there is a discount
+      (hasDiscount
+        ? `TEXT 50, 160, "1", 0, 1, 1, "${MRP_LABEL}"\n`
+        : '') +
+
+      // 4b. SELLING PRICE (right) — large ROMAN font
+      `TEXT 260, 150, "ROMAN.TTF", 0, 10, 10, "${PRICE}"\n` +
 
       // 5. PRINT — 1 label layout, QUANTITY copies
       `PRINT 1, ${QUANTITY}\n`;

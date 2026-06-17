@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Product } from '../types';
 import { barcodeService } from '../services/barcodeService';
-import { printerService } from '../services/printerService';
+import { printerService, generateDateCode } from '../services/printerService';
 
 interface StickerPreviewProps {
   product: Product;
@@ -20,7 +20,11 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
   const SHOP_NAME    = shopName.toUpperCase();
   const PRODUCT_NAME = product.name.length > 20 ? product.name.substring(0, 20) : product.name;
   const BARCODE_DATA = `${product.name}*${product.mrp}`;  // e.g. "T-SHIRT*199"
-  const PRICE        = `Rs. ${product.mrp.toFixed(2)}`;
+  const MRP_DISPLAY  = `MRP Rs.${product.mrp.toFixed(2)}`;
+  const SELL_PRICE   = product.sellingPrice ?? product.mrp;
+  const PRICE        = `Rs. ${SELL_PRICE.toFixed(2)}`;
+  const hasDiscount  = product.sellingPrice !== undefined && product.sellingPrice < product.mrp;
+  const DATE_CODE    = generateDateCode(product.createdAt);
   // ────────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -150,21 +154,40 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
             {SHOP_NAME}
           </div>
 
-          {/* 2. PRODUCT NAME */}
-          <div className="w-full text-center font-bold" style={{ fontSize: '2mm' }}>
-            {PRODUCT_NAME}
+          {/* 2. PRODUCT NAME & DATE CODE */}
+          <div className="w-full flex items-center justify-between font-bold" style={{ fontSize: '2mm' }}>
+            <div className="flex-1 text-center">{PRODUCT_NAME}</div>
+            <div className="shrink-0 pl-[1mm]" style={{ fontSize: '1.6mm' }}>{DATE_CODE}</div>
           </div>
 
           {/* 3. BARCODE — encodes BARCODE_DATA = "name*mrp" */}
-          <div className="w-full flex-1 flex items-center justify-center min-h-0 overflow-hidden">
-            {barcodeImage && (
-              <img src={barcodeImage} alt={BARCODE_DATA} className="w-full h-full block" />
-            )}
+          <div className="w-full flex-1 flex flex-col items-center justify-center min-h-0 overflow-hidden">
+            <div className="w-full flex-1 min-h-0">
+              {barcodeImage && (
+                <img src={barcodeImage} alt={BARCODE_DATA} className="w-full h-full block object-contain" />
+              )}
+            </div>
+            <div className="w-full text-center font-medium mt-[0.5mm] tracking-wide" style={{ fontSize: '1.6mm' }}>
+              {BARCODE_DATA}
+            </div>
           </div>
 
-          {/* 4. PRICE */}
-          <div className="w-full text-right font-black" style={{ fontSize: '2.5mm' }}>
-            {PRICE}
+          {/* 4. PRICE ROW — MRP (strikethrough) left | Selling price (bold) right */}
+          <div className="w-full flex items-baseline justify-between" style={{ marginTop: '0.3mm' }}>
+            {hasDiscount && (
+              <span
+                className="line-through text-gray-500"
+                style={{ fontSize: '1.6mm', fontWeight: 600, letterSpacing: '0.02em' }}
+              >
+                {MRP_DISPLAY}
+              </span>
+            )}
+            <span
+              className="font-black ml-auto"
+              style={{ fontSize: '2.5mm' }}
+            >
+              {PRICE}
+            </span>
           </div>
         </div>
       </div>

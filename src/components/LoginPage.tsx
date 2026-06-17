@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -11,10 +11,10 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) return;
+    if (!username.trim() || !password) return;
     setError('');
     setIsLoading(true);
-    const result = await login(email.trim(), password);
+    const result = await login(username.trim(), password);
     if (result.error) setError(result.error);
     setIsLoading(false);
   };
@@ -48,7 +48,7 @@ export const LoginPage: React.FC = () => {
             {/* Email */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Email Address
+                User ID
               </label>
               <div className="relative">
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
@@ -57,12 +57,12 @@ export const LoginPage: React.FC = () => {
                   </svg>
                 </div>
                 <input
-                  id="login-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={e => { setEmail(e.target.value); setError(''); }}
-                  placeholder="you@example.com"
+                  id="login-username"
+                  type="text"
+                  autoComplete="username"
+                  value={username}
+                  onChange={e => { setUsername(e.target.value); setError(''); }}
+                  placeholder="admin-user"
                   required
                   className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500/50 transition-all duration-200"
                 />
@@ -124,7 +124,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               id="login-submit"
-              disabled={isLoading || !email || !password}
+              disabled={isLoading || !username || !password}
               className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-lg shadow-brand-500/20 disabled:shadow-none flex items-center justify-center gap-2 mt-2"
             >
               {isLoading ? (

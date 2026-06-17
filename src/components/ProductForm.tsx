@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { useStore } from '../store/productStore';
-import { Product } from '../types';
 
 export const ProductForm: React.FC = () => {
   const [formData, setFormData] = useState({
     code: '',
     name: '',
     mrp: '',
+    sellingPrice: '',
     category: '',
+    purchaseDate: new Date().toISOString().split('T')[0],
   });
   const [showSuccess, setShowSuccess] = useState(false);
 
   const addProduct = useStore((state) => state.addProduct);
+  const products = useStore((state) => state.products);
+
+  const uniqueCategories = Array.from(new Set(products.map(p => p.category).filter(Boolean))).sort();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -29,12 +33,14 @@ export const ProductForm: React.FC = () => {
       return;
     }
 
-    const product: Omit<Product, 'id' | 'createdAt' | 'barcode'> = {
+    const product = {
       code: formData.code,
       name: formData.name,
       mrp: parseFloat(formData.mrp),
+      sellingPrice: formData.sellingPrice ? Number(formData.sellingPrice) : undefined,
       category: formData.category,
-    };
+      createdAt: formData.purchaseDate
+    } as any;
 
     addProduct(product);
 
@@ -42,7 +48,9 @@ export const ProductForm: React.FC = () => {
       code: '',
       name: '',
       mrp: '',
+      sellingPrice: '',
       category: '',
+      purchaseDate: new Date().toISOString().split('T')[0],
     });
 
     setShowSuccess(true);
@@ -119,16 +127,51 @@ export const ProductForm: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+            Selling Price (₹) <span className="text-slate-400 font-normal text-xs">(discounted — leave blank to use MRP)</span>
+          </label>
+          <input
+            type="number"
+            name="sellingPrice"
+            value={formData.sellingPrice}
+            onChange={handleChange}
+            placeholder="e.g., 399"
+            step="0.01"
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+            Purchase Date <span className="text-slate-400 font-normal text-xs">(for age code)</span>
+          </label>
+          <input
+            type="date"
+            name="purchaseDate"
+            value={formData.purchaseDate}
+            onChange={handleChange}
+            className="input-field"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">
             Category
           </label>
           <input
             type="text"
             name="category"
+            list="category-options"
             value={formData.category}
             onChange={handleChange}
-            placeholder="e.g., Tops, Sarees, etc."
+            placeholder="Select from dropdown or type a new one..."
             className="input-field"
           />
+          <datalist id="category-options">
+            {uniqueCategories.map((cat) => (
+              <option key={cat} value={cat} />
+            ))}
+          </datalist>
         </div>
 
         <button type="submit" className="btn-primary w-full mt-2">

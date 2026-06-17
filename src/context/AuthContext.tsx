@@ -1,66 +1,91 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  User,
-} from 'firebase/auth';
-import { auth, isEmailAllowed } from '../services/firebase';
+import { supabase } from '../services/supabase';
+
+export interface User {
+  id: string;
+  username: string;
+  isAdmin: boolean;
+  shopName?: string;
+}
 
 interface AuthContextValue {
   user: User | null;
   isAllowed: boolean;
   isAuthLoading: boolean;
-  login: (email: string, password: string) => Promise<{ error?: string }>;
+  login: (username: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
+  updateShopName: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAllowed, setIsAllowed] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setIsAllowed(isEmailAllowed(firebaseUser?.email));
-      setIsAuthLoading(false);
-    });
-    return unsub;
+    // Check if user is logged in via localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setIsAuthLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ error?: string }> => {
+  const login = async (username: string, password: string): Promise<{ error?: string }> => {
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      if (!isEmailAllowed(cred.user.email)) {
-        // Authenticated but not on the allowlist — sign them out immediately
-        await signOut(auth);
-        return { error: 'Access denied. This account is not authorized to use this application.' };
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', username)
+        .eq('password', password)
+        .single();
+
+      if (error || !data) {
+        return { error: 'Invalid User ID or Password' };
       }
+
+      const loggedInUser: User = {
+        id: data.id,
+        username: data.username,
+        isAdmin: data.isAdmin,
+        shopName: data.shopName
+      };
+
+      setUser(loggedInUser);
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
       return {};
     } catch (err: any) {
-      const code: string = err?.code || '';
-      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        return { error: 'Invalid email or password.' };
-      }
-      if (code === 'auth/too-many-requests') {
-        return { error: 'Too many failed attempts. Please try again later.' };
-      }
-      if (code === 'auth/invalid-email') {
-        return { error: 'Please enter a valid email address.' };
-      }
-      return { error: 'Login failed. Please check your credentials.' };
+      return { error: 'Login failed. Could not connect to Supabase.' };
     }
   };
 
   const logout = async () => {
-    await signOut(auth);
+    setUser(null);
+    localStorage.removeItem('user');
+    // Clear global store so next user doesn't see cached data
+    const { useStore } = await import('../store/productStore');
+    useStore.getState().reset();
+  };
+
+  const updateShopName = async (name: string) => {
+    if (!user) return;
+    try {
+      await supabase
+        .from('users')
+        .update({ shopName: name })
+        .eq('id', user.id);
+
+      const updatedUser = { ...user, shopName: name };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (e) {
+      console.error('Failed to update shop name', e);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAllowed, isAuthLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isAllowed: true, isAuthLoading, login, logout, updateShopName }}>
       {children}
     </AuthContext.Provider>
   );

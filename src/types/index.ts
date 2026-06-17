@@ -3,6 +3,7 @@ export interface Product {
   code: string;
   name: string;
   mrp: number;
+  sellingPrice?: number; // Discounted / selling price (optional; falls back to mrp)
   barcode: string;
   category?: string;
   createdAt: Date;
