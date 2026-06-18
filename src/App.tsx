@@ -17,7 +17,7 @@ function App() {
   const selectProduct = useStore((state) => state.selectProduct);
   const init = useStore((state) => state.init);
   const isLoaded = useStore((state) => state.isLoaded);
-  const { user, isAuthLoading, logout, updateShopName } = useAuth();
+  const { user, isAuthLoading, logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState<Tab>('products');
   const [printQuantity, setPrintQuantity] = useState(1);
@@ -28,11 +28,8 @@ function App() {
   useEffect(() => { init(); }, [init]);
 
   useEffect(() => {
-    if (isLoaded && user && !user.shopName) {
-      // Handled by returning early for <ShopNameSetup />
-    }
-    setShopInput(user?.shopName || '');
-  }, [isLoaded, user?.shopName]);
+    setShopInput(localStorage.getItem('shopName') || '');
+  }, [isLoaded]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -50,7 +47,6 @@ function App() {
   }
 
   if (!user) return <LoginPage />;
-  if (user && !user.shopName) return <ShopNameSetup />;
 
   if (!isLoaded) {
     return (
@@ -106,15 +102,15 @@ function App() {
               <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
                 Barcode Generator
               </h1>
-              {user?.shopName && !isEditingShop ? (
+              {localStorage.getItem('shopName') && !isEditingShop ? (
                 <button
-                  onClick={() => { setIsEditingShop(true); setShopInput(user.shopName || ''); }}
+                  onClick={() => { setIsEditingShop(true); setShopInput(localStorage.getItem('shopName') || ''); }}
                   className="text-xs font-semibold text-brand-600 dark:text-brand-400 flex items-center gap-1 hover:underline truncate max-w-[160px]"
                 >
                   <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
-                  <span className="truncate">{user.shopName}</span>
+                  <span className="truncate">{localStorage.getItem('shopName')}</span>
                 </button>
               ) : (
                 <p className="text-xs text-slate-400">Thermal Sticker Printer</p>
@@ -175,10 +171,10 @@ function App() {
               placeholder="Enter your shop name..."
               className="input-field flex-1 !py-2 text-sm"
               autoFocus
-              onKeyDown={e => { if (e.key === 'Enter' && shopInput.trim()) { updateShopName(shopInput.trim()); setIsEditingShop(false); } }}
+              onKeyDown={e => { if (e.key === 'Enter' && shopInput.trim()) { localStorage.setItem('shopName', shopInput.trim()); setIsEditingShop(false); } }}
             />
-            <button onClick={() => { if (shopInput.trim()) { updateShopName(shopInput.trim()); setIsEditingShop(false); } }} disabled={!shopInput.trim()} className="btn-primary text-sm !py-2">Save</button>
-            {user?.shopName && <button onClick={() => { setIsEditingShop(false); setShopInput(user.shopName || ''); }} className="btn-secondary text-sm !py-2">✕</button>}
+            <button onClick={() => { if (shopInput.trim()) { localStorage.setItem('shopName', shopInput.trim()); setIsEditingShop(false); } }} disabled={!shopInput.trim()} className="btn-primary text-sm !py-2">Save</button>
+            {localStorage.getItem('shopName') && <button onClick={() => { setIsEditingShop(false); setShopInput(localStorage.getItem('shopName') || ''); }} className="btn-secondary text-sm !py-2">✕</button>}
           </div>
         </div>
       )}
@@ -226,7 +222,7 @@ function App() {
                     Printer
                   </button>
                 </div>
-                <StickerPreview product={selectedProduct} quantity={printQuantity} shopName={user?.shopName || 'Shop Name'} />
+                <StickerPreview product={selectedProduct} quantity={printQuantity} shopName={localStorage.getItem('shopName') || 'Shop Name'} />
               </>
             ) : (
               <div className="glass-card p-12 text-center">

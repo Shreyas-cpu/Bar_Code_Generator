@@ -1,30 +1,28 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../services/supabase';
 
 export interface User {
   id: string;
   username: string;
   isAdmin: boolean;
-  shopName?: string;
 }
 
 interface AuthContextValue {
   user: User | null;
-  isAllowed: boolean;
   isAuthLoading: boolean;
   login: (username: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
-  updateShopName: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const API_URL = 'http://localhost:3001/api';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in via localStorage
+    // Check local storage for persistent session
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -34,29 +32,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string): Promise<{ error?: string }> => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('username', username)
-        .eq('password', password)
-        .single();
-
-      if (error || !data) {
-        return { error: 'Invalid User ID or Password' };
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        return { error: data.error || 'Invalid User ID or Password' };
       }
 
-      const loggedInUser: User = {
-        id: data.id,
-        username: data.username,
-        isAdmin: data.isAdmin,
-        shopName: data.shopName
-      };
-
-      setUser(loggedInUser);
-      localStorage.setItem('user', JSON.stringify(loggedInUser));
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
       return {};
     } catch (err: any) {
-      return { error: 'Login failed. Could not connect to Supabase.' };
+      return { error: 'Failed to connect to local server. Make sure it is running.' };
     }
   };
 
@@ -68,24 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useStore.getState().reset();
   };
 
-  const updateShopName = async (name: string) => {
-    if (!user) return;
-    try {
-      await supabase
-        .from('users')
-        .update({ shopName: name })
-        .eq('id', user.id);
-
-      const updatedUser = { ...user, shopName: name };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    } catch (e) {
-      console.error('Failed to update shop name', e);
-    }
-  };
-
   return (
-    <AuthContext.Provider value={{ user, isAllowed: true, isAuthLoading, login, logout, updateShopName }}>
+    <AuthContext.Provider value={{ user, isAuthLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

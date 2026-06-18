@@ -7,7 +7,7 @@ interface ProductListProps {
 }
 
 export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, selectedProductId }) => {
-  const products = useStore((state) => state.getProducts());
+  const products = useStore((state) => state.products);
   const deleteProduct = useStore((state) => state.deleteProduct);
 
   const handleDelete = (id: string) => {

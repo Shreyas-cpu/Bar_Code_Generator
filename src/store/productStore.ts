@@ -1,39 +1,35 @@
 import { create } from 'zustand';
-import { Product, PrinterSettings } from '../types';
-import { supabase } from '../services/supabase';
+import { Product } from '../types';
+
+interface PrinterSettings {
+  type: 'usb' | 'bluetooth';
+  paperWidth: '58' | '80' | '100';
+  bluetoothDeviceName?: string;
+  usbVendorId?: string;
+}
 
 interface AppStore {
   products: Product[];
   selectedProduct: Product | null;
   printerSettings: PrinterSettings;
   isLoaded: boolean;
-  
-  // App Initialization
   init: () => Promise<void>;
   reset: () => void;
-
-  // Product actions
   addProduct: (product: Omit<Product, 'id' | 'barcode'> & { createdAt?: any }) => Promise<void>;
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   selectProduct: (product: Product | null) => void;
-  getProducts: () => Product[];
-  
-  // Printer actions
   setPrinterSettings: (settings: Partial<PrinterSettings>) => Promise<void>;
   getPrinterSettings: () => PrinterSettings;
 }
 
-// Removing API_URL
-
+const API_URL = 'http://localhost:3001/api';
 
 const defaultPrinterSettings: PrinterSettings = {
   type: 'usb',
-  paperWidth: 80,
-  isConnected: false
+  paperWidth: '80',
 };
 
-// ── localStorage helpers (used as fallback when backend is unavailable) ──────
 const getUserId = () => {
   const userStr = localStorage.getItem('user');
   return userStr ? JSON.parse(userStr).id : 'default';
@@ -50,11 +46,18 @@ const LS = {
   savePrinterSettings: (s: PrinterSettings) => localStorage.setItem('printerSettings', JSON.stringify(s)),
 };
 
-// Supabase helper to get current userId
-const getUserIdFromAuth = () => {
-  const userStr = localStorage.getItem('user');
-  return userStr ? JSON.parse(userStr).id : null;
-};
+let useBackend = true; // Will be set to false if first request fails
+
+async function tryFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response | null> {
+  if (!useBackend) return null;
+  try {
+    const res = await fetch(input as string, init);
+    return res;
+  } catch {
+    useBackend = false;
+    return null;
+  }
+}
 
 export const useStore = create<AppStore>((set, get) => ({
   products: [],
@@ -64,33 +67,21 @@ export const useStore = create<AppStore>((set, get) => ({
   
   init: async () => {
     set({ isLoaded: false });
-    const userId = getUserIdFromAuth();
-    if (!userId) return;
+    const userId = getUserId();
 
-    try {
-      const [productsRes, settingsRes] = await Promise.all([
-        supabase.from('products').select('*').eq('userId', userId),
-        supabase.from('settings').select('*')
+    const res = await tryFetch(`${API_URL}/products?userId=${userId}`);
+    if (res && res.ok) {
+      const [products, settingsRes] = await Promise.all([
+        res.json(),
+        tryFetch(`${API_URL}/settings`).then(r => r?.json().catch(() => ({})) ?? {})
       ]);
-
-      if (productsRes.error) throw productsRes.error;
-
-      // Parse settings
-      const settingsMap: Record<string, any> = {};
-      if (settingsRes.data) {
-        settingsRes.data.forEach((r: any) => {
-          try { settingsMap[r.key] = JSON.parse(r.value); } 
-          catch { settingsMap[r.key] = r.value; }
-        });
-      }
-
       set({
-        products: productsRes.data as any[] || [],
-        printerSettings: settingsMap.printerSettings || defaultPrinterSettings,
+        products: products || [],
+        printerSettings: (settingsRes as any).printerSettings || defaultPrinterSettings,
         isLoaded: true
       });
-    } catch (e) {
-      console.error('Supabase fetch failed, falling back to local storage', e);
+    } else {
+      console.warn('Local API unavailable — using localStorage fallback');
       set({
         products: LS.getProducts(),
         printerSettings: LS.getPrinterSettings(),
@@ -105,7 +96,7 @@ export const useStore = create<AppStore>((set, get) => ({
 
   addProduct: async (product) => {
     const id = Date.now().toString();
-    const newProduct: Product = {
+    const newProduct = {
       ...product,
       id,
       barcode: id,
@@ -115,13 +106,12 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ products });
     LS.saveProducts(products);
     
-    const userId = getUserIdFromAuth();
-    if (userId) {
-      await supabase.from('products').insert([{
-        ...newProduct,
-        userId
-      }]);
-    }
+    const userId = getUserId();
+    await tryFetch(`${API_URL}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...newProduct, userId })
+    });
   },
 
   updateProduct: async (id, updates) => {
@@ -129,10 +119,11 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ products });
     LS.saveProducts(products);
     
-    const userId = getUserIdFromAuth();
-    if (userId) {
-      await supabase.from('products').update(updates).eq('id', id).eq('userId', userId);
-    }
+    await tryFetch(`${API_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
   },
 
   deleteProduct: async (id) => {
@@ -140,29 +131,24 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ products });
     LS.saveProducts(products);
     
-    const userId = getUserIdFromAuth();
-    if (userId) {
-      await supabase.from('products').delete().eq('id', id).eq('userId', userId);
-    }
+    await tryFetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
   },
 
   selectProduct: (product) => {
     set({ selectedProduct: product });
   },
 
-  getProducts: () => get().products,
-
   setPrinterSettings: async (settings) => {
     const printerSettings = { ...get().printerSettings, ...settings };
     set({ printerSettings });
     LS.savePrinterSettings(printerSettings);
     
-    await supabase.from('settings').upsert({ 
-      key: 'printerSettings', 
-      value: JSON.stringify(printerSettings) 
+    await tryFetch(`${API_URL}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'printerSettings', value: printerSettings })
     });
   },
 
   getPrinterSettings: () => get().printerSettings,
 }));
-
