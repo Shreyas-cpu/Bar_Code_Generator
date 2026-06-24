@@ -5,7 +5,6 @@ import { ProductList } from './components/ProductList';
 import { StickerPreview } from './components/StickerPreview';
 import { PrinterSettings } from './components/PrinterSettings';
 import { LoginPage } from './components/LoginPage';
-import { ShopNameSetup } from './components/ShopNameSetup';
 import { UsersManagement } from './components/UsersManagement';
 import { useAuth } from './context/AuthContext';
 import './index.css';
@@ -251,7 +250,7 @@ function App() {
                   { icon: '🖨️', title: 'TSC TE-210 Printer', desc: 'Connects via USB (WinUSB driver via Zadig). Sends raw TSPL commands — no print dialog, no rotation issues.' },
                   { icon: '📱', title: 'Mobile Support', desc: 'Works on Android Chrome via USB-OTG. Pair your phone to the printer with an OTG cable, then connect here.' },
                   { icon: '💾', title: 'Data Storage', desc: 'Products are saved locally (SQLite when running locally, localStorage on Vercel). Data persists across sessions.' },
-                  { icon: '🏷️', title: 'Barcode Format', desc: 'CODE128, data = ProductName*Price (e.g. T-SHIRT*199). Scannable and contains both product and price info.' },
+                  { icon: '🏷️', title: 'Barcode Format', desc: 'CODE128, data = ProductCode (e.g. WM001). Scannable and matches the unique product code.' },
                 ].map(item => (
                   <div key={item.title} className="flex gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                     <span className="text-xl shrink-0">{item.icon}</span>

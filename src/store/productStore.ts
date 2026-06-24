@@ -6,6 +6,8 @@ interface PrinterSettings {
   paperWidth: '58' | '80' | '100';
   bluetoothDeviceName?: string;
   usbVendorId?: string;
+  isConnected?: boolean;
+  deviceName?: string;
 }
 
 interface AppStore {
@@ -23,7 +25,7 @@ interface AppStore {
   getPrinterSettings: () => PrinterSettings;
 }
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 const defaultPrinterSettings: PrinterSettings = {
   type: 'usb',
@@ -36,15 +38,44 @@ const getUserId = () => {
 };
 
 const LS = {
+  checkExpiration: () => {
+    const lastActiveStr = localStorage.getItem('lastActive');
+    if (lastActiveStr) {
+      const lastActive = parseInt(lastActiveStr, 10);
+      const now = Date.now();
+      // 5 minutes in milliseconds
+      if (now - lastActive > 5 * 60 * 1000) {
+        localStorage.removeItem(`products_${getUserId()}`);
+        localStorage.removeItem('printerSettings');
+      }
+    }
+    LS.updateActivity();
+  },
+  updateActivity: () => {
+    localStorage.setItem('lastActive', Date.now().toString());
+  },
   getProducts: (): Product[] => {
+    LS.updateActivity();
     try { return JSON.parse(localStorage.getItem(`products_${getUserId()}`) || '[]'); } catch { return []; }
   },
-  saveProducts: (p: Product[]) => localStorage.setItem(`products_${getUserId()}`, JSON.stringify(p)),
+  saveProducts: (p: Product[]) => {
+    LS.updateActivity();
+    localStorage.setItem(`products_${getUserId()}`, JSON.stringify(p));
+  },
   getPrinterSettings: (): PrinterSettings => {
+    LS.updateActivity();
     try { return JSON.parse(localStorage.getItem('printerSettings') || 'null') || defaultPrinterSettings; } catch { return defaultPrinterSettings; }
   },
-  savePrinterSettings: (s: PrinterSettings) => localStorage.setItem('printerSettings', JSON.stringify(s)),
+  savePrinterSettings: (s: PrinterSettings) => {
+    LS.updateActivity();
+    localStorage.setItem('printerSettings', JSON.stringify(s));
+  },
 };
+
+// Keep the activity timestamp fresh while the app is open
+if (typeof window !== 'undefined') {
+  setInterval(LS.updateActivity, 60000); // update every 1 minute
+}
 
 let useBackend = true; // Will be set to false if first request fails
 
@@ -66,6 +97,7 @@ export const useStore = create<AppStore>((set, get) => ({
   isLoaded: false,
   
   init: async () => {
+    LS.checkExpiration();
     set({ isLoaded: false });
     const userId = getUserId();
 
@@ -99,7 +131,7 @@ export const useStore = create<AppStore>((set, get) => ({
     const newProduct = {
       ...product,
       id,
-      barcode: id,
+      barcode: product.code,
       createdAt: product.createdAt ? new Date(product.createdAt).toISOString() as any : new Date().toISOString() as any,
     };
     const products = [...get().products, newProduct];

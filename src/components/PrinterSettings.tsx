@@ -42,7 +42,7 @@ export const PrinterSettings: React.FC = () => {
   };
 
   const handlePaperWidthChange = (width: number) => {
-    setPrinterSettings({ paperWidth: width });
+    setPrinterSettings({ paperWidth: String(width) as '58' | '80' | '100' });
   };
 
   return (

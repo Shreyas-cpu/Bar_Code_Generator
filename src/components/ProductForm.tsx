@@ -33,6 +33,11 @@ export const ProductForm: React.FC = () => {
       return;
     }
 
+    if (products.some(p => p.code.toLowerCase() === formData.code.toLowerCase())) {
+      alert('A product with this code already exists! Please use a unique Product Code.');
+      return;
+    }
+
     const product = {
       code: formData.code,
       name: formData.name,
@@ -90,6 +95,7 @@ export const ProductForm: React.FC = () => {
             onChange={handleChange}
             placeholder="e.g., WM001"
             className="input-field"
+            maxLength={9}
             required
           />
         </div>

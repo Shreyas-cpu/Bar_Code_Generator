@@ -90,7 +90,7 @@ export const printerService = {
     // ── Global label variables (all driven from UI) ─────────────────────────────────────
     const SHOP_NAME    = shopName.toUpperCase();
     const PRODUCT_NAME = product.name.length > 20 ? product.name.substring(0, 20) : product.name;
-    const BARCODE_DATA = `${product.name}*${product.mrp}`;   // e.g. "T-SHIRT*199"
+    const BARCODE_DATA = product.code;
     const SELL_PRICE   = product.sellingPrice ?? product.mrp;
     const PRICE        = `Rs. ${SELL_PRICE.toFixed(2)}`;     // e.g. "Rs. 399.00"
     const MRP_LABEL    = `MRP Rs.${product.mrp.toFixed(2)}`; // e.g. "MRP Rs.499.00"
@@ -107,10 +107,10 @@ export const printerService = {
       'CLS\n' +                 // Clear image buffer
 
       // 1. SHOP NAME — top of label
-      `TEXT 55, 15, "3", 0, 1, 1, "${SHOP_NAME}"\n` +
+      `TEXT 55, 15, "2", 0, 1, 1, "${SHOP_NAME}"\n` +
 
       // 2. PRODUCT NAME — below shop name
-      `TEXT 55, 45, "1", 0, 1, 1, "${PRODUCT_NAME}"\n` +
+      `TEXT 55, 45, "3", 0, 1, 1, "${PRODUCT_NAME}"\n` +
       `TEXT 320, 45, "1", 0, 1, 1, "${DATE_CODE}"\n` +
 
       // 3. BARCODE — CODE128, 50 dots tall, human-readable underneath
