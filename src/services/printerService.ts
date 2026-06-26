@@ -92,8 +92,8 @@ export const printerService = {
     const PRODUCT_NAME = product.name.length > 20 ? product.name.substring(0, 20) : product.name;
     const BARCODE_DATA = product.code;
     const SELL_PRICE   = product.sellingPrice ?? product.mrp;
-    const PRICE        = `Rs. ${SELL_PRICE.toFixed(2)}`;     // e.g. "Rs. 399.00"
-    const MRP_LABEL    = `MRP Rs.${product.mrp.toFixed(2)}`; // e.g. "MRP Rs.499.00"
+    const PRICE        = `Rs. ${Number(SELL_PRICE).toFixed(2)}`;     // e.g. "Rs. 399.00"
+    const MRP_LABEL    = `MRP Rs.${Number(product.mrp).toFixed(2)}`; // e.g. "MRP Rs.499.00"
     const hasDiscount  = product.sellingPrice !== undefined && product.sellingPrice < product.mrp;
     const QUANTITY     = quantity;
     const DATE_CODE    = generateDateCode(product.createdAt);

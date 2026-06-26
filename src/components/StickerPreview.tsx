@@ -20,9 +20,9 @@ export const StickerPreview: React.FC<StickerPreviewProps> = ({ product, quantit
   const SHOP_NAME    = shopName.toUpperCase();
   const PRODUCT_NAME = product.name.length > 20 ? product.name.substring(0, 20) : product.name;
   const BARCODE_DATA = product.code;
-  const MRP_DISPLAY  = `MRP Rs.${product.mrp.toFixed(2)}`;
-  const SELL_PRICE   = product.sellingPrice ?? product.mrp;
-  const PRICE        = `Rs. ${SELL_PRICE.toFixed(2)}`;
+  const MRP_DISPLAY  = `MRP Rs.${Number(product.mrp).toFixed(2)}`;
+  const SELL_PRICE   = product.sellingPrice ?? Number(product.mrp);
+  const PRICE        = `Rs. ${Number(SELL_PRICE).toFixed(2)}`;
   const hasDiscount  = product.sellingPrice !== undefined && product.sellingPrice < product.mrp;
   const DATE_CODE    = generateDateCode(product.createdAt);
   // ────────────────────────────────────────────────────────────────────────────
